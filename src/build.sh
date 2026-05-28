@@ -1,9 +1,9 @@
 #!/bin/sh
-# 
+#
 # MIT License
-# 
+#
 # Copyright (c) 2026 gounix
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -21,7 +21,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# 
+#
 #
 echo Starting builder version: Development-version
 
@@ -37,8 +37,8 @@ if [ X${GIT_USER} = X ]; then
 	echo variable GIT_USER not set
 	exit 1
 fi
-if [ X${GIT_DIR} = X ]; then
-	echo variable GIT_DIR not set
+if [ X${GIT_SUBDIR} = X ]; then
+	echo variable GIT_SUBDIR not set
 	exit 1
 fi
 if [ X${GIT_SSH_KEY} = X ]; then
@@ -73,7 +73,7 @@ echo all variables set
 echo GIT_HOST=$GIT_HOST
 echo GIT_PROJECT=$GIT_PROJECT
 echo GIT_USER=$GIT_USER
-echo GIT_DIR=$GIT_DIR
+echo GIT_SUBDIR=$GIT_SUBDIR
 echo GIT_SSH_KEY=$GIT_SSH_KEY
 echo GIT_TAG=$GIT_TAG
 echo REGISTRY_USER=$REGISTRY_USER
@@ -104,5 +104,5 @@ if [ X${GIT_TAG} != X ]; then
 	git checkout $GIT_TAG
 fi
 
-cd /tmp/builddir/${GIT_DIR}
+cd /tmp/builddir/${GIT_SUBDIR}
 make
