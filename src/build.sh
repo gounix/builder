@@ -97,12 +97,22 @@ ssh-keygen -H
 cd /tmp
 echo clone git repo ${GIT_USER}@${GIT_HOST}:${GIT_PROJECT}
 git clone ${GIT_USER}@${GIT_HOST}:${GIT_PROJECT} builddir
+if [ $? -ne 0 ]; then
+	exit 1
+fi
 
 cd /tmp/builddir
 if [ X${GIT_TAG} != X ]; then
 	echo checking out git tag $GIT_TAG
 	git checkout $GIT_TAG
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
 fi
 
+if [ ! -d /tmp/builddir/${GIT_SUBDIR} ]; then
+	echo directory ${GIT_SUBDIR} does not exist
+	exit 1
+fi
 cd /tmp/builddir/${GIT_SUBDIR}
 make
