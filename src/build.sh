@@ -23,27 +23,35 @@
 # SOFTWARE.
 #
 #
+EXIT_OK=0
+EXIT_NO_ENV=1
+EXIT_LOGIN_FAILED=2
+EXIT_GIT_CLONE_FAILED=3
+EXIT_GIT_CHECKOUT_FAILED=4
+EXIT_GIT_DIR_NOT_FOUND=5
+EXIT_MAKE_FAILED=6
+
 echo Starting builder version: Development-version
 
 if [ X${GIT_HOST} = X ]; then
 	echo variable GIT_HOST not set
-	exit 1
+	exit $EXIT_NO_ENV
 fi
 if [ X${GIT_PROJECT} = X ]; then
 	echo variable GIT_PROJECT not set
-	exit 1
+	exit $EXIT_NO_ENV
 fi
 if [ X${GIT_USER} = X ]; then
 	echo variable GIT_USER not set
-	exit 1
+	exit $EXIT_NO_ENV
 fi
 if [ X${GIT_SUBDIR} = X ]; then
 	echo variable GIT_SUBDIR not set
-	exit 1
+	exit $EXIT_NO_ENV
 fi
 if [ X${GIT_SSH_KEY} = X ]; then
 	echo variable GIT_SSH_KEY not set
-	exit 1
+	exit $EXIT_NO_ENV
 fi
 if [ X${GIT_TAG} = X ]; then
 	echo variable GIT_TAG not set
@@ -51,21 +59,21 @@ if [ X${GIT_TAG} = X ]; then
 fi
 if [ X${REGISTRY_HOST} = X ]; then
 	echo variable REGISTRY_HOST not set
-	exit 1
+	exit $EXIT_NO_ENV
 fi
 if [ X${REGISTRY_AUTHENTICATED} = X ]; then
 	echo variable REGISTRY_AUTHENTICATED not set
-	exit 1
+	exit $EXIT_NO_ENV
 fi
 
 if [ X${REGISTRY_AUTHENTICATED} = Xtrue ]; then
 	if [ X${REGISTRY_USER} = X ]; then
 		echo variable REGISTRY_USER not set
-		exit 1
+		exit $EXIT_NO_ENV
 	fi
 	if [ X${REGISTRY_PASSWORD} = X ]; then
 		echo variable REGISTRY_PASSWORD not set
-		exit 1
+		exit $EXIT_NO_ENV
 	fi
 fi
 
@@ -84,11 +92,14 @@ echo REGISTRY_AUTHENTICATED=$REGISTRY_AUTHENTICATED
 if [ X${REGISTRY_AUTHENTICATED} = Xtrue ]; then
 	echo buildah login
 	echo ${REGISTRY_PASSWORD} | buildah login ${REGISTRY_HOST} --username ${REGISTRY_USER} --password-stdin
+	if [ $? -ne 0 ]; then
+		echo buildah login failed
+		exit $EXIT_LOGIN_FAILED
+	fi
 fi
 
 cp ~/.ssh2/${GIT_SSH_KEY} ~/.ssh/${GIT_SSH_KEY}
 chmod 0600 ~/.ssh/${GIT_SSH_KEY}
-ls -l ~/.ssh
 
 echo get ssh key from  $GIT_HOST
 ssh-keyscan -p 22 $GIT_HOST > ~/.ssh/known_hosts
@@ -98,7 +109,8 @@ cd /tmp
 echo clone git repo ${GIT_USER}@${GIT_HOST}:${GIT_PROJECT}
 git clone ${GIT_USER}@${GIT_HOST}:${GIT_PROJECT} builddir
 if [ $? -ne 0 ]; then
-	exit 1
+	echo git clone failed
+	exit $EXIT_GIT_CLONE_FAILED
 fi
 
 cd /tmp/builddir
@@ -106,13 +118,20 @@ if [ X${GIT_TAG} != X ]; then
 	echo checking out git tag $GIT_TAG
 	git checkout $GIT_TAG
 	if [ $? -ne 0 ]; then
-		exit 1
+		echo git checkout $GIT_TAG failed
+		exit $EXIT_GIT_CHECKOUT_FAILED
 	fi
 fi
 
 if [ ! -d /tmp/builddir/${GIT_SUBDIR} ]; then
 	echo directory ${GIT_SUBDIR} does not exist
-	exit 1
+	exit $EXIT_GIT_DIR_NOT_FOUND
 fi
 cd /tmp/builddir/${GIT_SUBDIR}
+
 make
+if [ $? -ne 0 ]; then
+	echo make failed with error $?
+	exit $EXIT_MAKE_FAILED
+fi
+exit $EXIT_OK
